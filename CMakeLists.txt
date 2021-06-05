@@ -7,3 +7,4 @@ set(CMAKE_CXX_EXTENSIONS ON)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_executable(sensors main.cpp Sensor.cpp)
+target_include_directories(sensors SYSTEM PRIVATE third_party)

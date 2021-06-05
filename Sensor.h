@@ -10,20 +10,27 @@ class Sensor {
          double max_value)
       : sampling_rate_(sampling_rate),
         sampling_window_(sampling_window),
-        sampling_buffer_size_(2 * sampling_rate_ * sampling_window_),
+        samples_in_window_(sampling_rate_ * sampling_window_),
+        sampling_buffer_size_(2 * samples_in_window_),
+        index_next_element_(samples_in_window_),
         name_(std::move(name)),
         label_(std::move(label)),
         min_value_(min_value),
-        max_value_(max_value){};
+        max_value_(max_value) {
+    samples_ = std::vector<double>(sampling_buffer_size_, {});
+  };
 
   void add_sample(double sample);
 
  private:
-  std::uint64_t sampling_rate_;    // frequency in HZ
-  std::uint64_t sampling_window_;  // time in seconds
+  std::uint64_t const sampling_rate_;      // frequency in HZ
+  std::uint64_t const sampling_window_;    // time in seconds
+  std::uint64_t const samples_in_window_;  // time in seconds
 
   // sample buffer size (2 * sampling_rate * sampling_window)
-  std::size_t sampling_buffer_size_;
+  std::size_t const sampling_buffer_size_;
+  // index to the next element
+  std::size_t index_next_element_;
 
   std::string name_;
   std::string label_;
