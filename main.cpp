@@ -1,8 +1,4 @@
+#include "Sensor.h"
 #include "json.hpp"
 
-#include "Sensor.h"
-
-int main()
-{
-    return 1;
-}
+int main() { return 1; }
