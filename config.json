@@ -1,0 +1,15 @@
+{
+	"sensors": [
+		{
+            "name": "cpu_freq",
+            "sampling_rate": 100,
+            "bit_depth": "16",
+            "min_value": 0,
+            "max_vaule": 3000,
+            "x_label": "Time",
+            "y_label": "Frequency in MHz",
+            "path": "/sys/...",
+            "enabled": true
+		}
+	]
+}

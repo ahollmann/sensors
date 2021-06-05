@@ -1,1 +1,3 @@
 # sensors
+
+cmake ../sensors -D CMAKE_EXPORT_COMPILE_COMMANDS=ON -D CMAKE_C_COMPILER=clang-12 -D CMAKE_CXX_COMPILER=clang++-12
