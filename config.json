@@ -1,15 +1,26 @@
 {
+      "sampling_window": 10,
+      "x_label": "Time",
 	"sensors": [
 		{
             "name": "cpu_freq",
-            "sampling_rate": 100,
+            "sampling_rate": 1,
             "bit_depth": "16",
             "min_value": 0,
-            "max_vaule": 3000,
-            "x_label": "Time",
-            "y_label": "Frequency in MHz",
-            "path": "/sys/...",
+            "max_value": 3000,
+            "label": "Frequency in MHz",
+            "path": "/home/viraeh/number",
             "enabled": true
-		}
+		},
+		{
+                  "name": "cpu_freq",
+                  "sampling_rate": 2,
+                  "bit_depth": "16",
+                  "min_value": 0,
+                  "max_value": 3000,
+                  "label": "Frequency in MHz",
+                  "path": "/home/viraeh/number2",
+                  "enabled": true
+                  }
 	]
 }

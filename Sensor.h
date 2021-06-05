@@ -7,7 +7,7 @@ class Sensor {
  public:
   Sensor(std::uint64_t sampling_rate, std::uint64_t sampling_window,
          std::string name, std::string label, double min_value,
-         double max_value)
+         double max_value, std::string path)
       : sampling_rate_(sampling_rate),
         sampling_window_(sampling_window),
         samples_in_window_(sampling_rate_ * sampling_window_),
@@ -16,11 +16,12 @@ class Sensor {
         name_(std::move(name)),
         label_(std::move(label)),
         min_value_(min_value),
-        max_value_(max_value) {
+        max_value_(max_value),
+        path_(std::move(path)) {
     samples_ = std::vector<double>(sampling_buffer_size_, {});
   };
 
-  void add_sample(double sample);
+  double read_sample();
 
  private:
   std::uint64_t const sampling_rate_;      // frequency in HZ
@@ -37,6 +38,8 @@ class Sensor {
 
   double min_value_;
   double max_value_;
+
+  std::string path_;
 
   // Type double is used. We waste some space, but double is most versatile
   // and can store singed integers with a width of 52 bit exactly
