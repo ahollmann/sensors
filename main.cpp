@@ -1,17 +1,19 @@
+#include <unistd.h>
+
 #include <algorithm>
 #include <chrono>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <iterator>
 #include <string>
 #include <thread>
 
 #include "Sensor.h"
 #include "json.hpp"
-#include <unistd.h>
 
 void usage(char** argv) {
-  std::cout << "Application: " << argv[0]
+  std::clog << "Application: " << argv[0]
             << " requires the path to the config file." << std::endl;
 }
 
@@ -21,27 +23,27 @@ struct SensorPeriodicTimer {
   std::size_t sensor_index;
 };
 
-void create_gnuplot_persistent_process(std::uint64_t sampling_window, std::vector<Sensor> const& sensors)
-{
+void create_gnuplot_persistent_process(std::uint64_t sampling_window,
+                                       std::vector<Sensor> const& sensors) {
   std::string gnuplot_config;
 
-  gnuplot_config.append( R"(
+  gnuplot_config.append(R"(
 set title "Plotting Sensor Data over Time"
 set xdata
 set xlabel "Time from now in seconds"
 set format x "+%.3f"
 )");
-std::string xrange;
-xrange += "set xrange [" + std::to_string(sampling_window) + ",0]\n";
-gnuplot_config.append(xrange);
+  std::string xrange;
+  xrange += "set xrange [" + std::to_string(sampling_window) + ":0]\n";
+  gnuplot_config.append(xrange);
 
   std::size_t y_count{1};
 
   std::string filenames("filenames = \"");
 
-  for(auto const &s : sensors)
-  {
-    std::string const y_count_string = y_count > 1 ? std::to_string(y_count) : "";
+  for (auto const& s : sensors) {
+    std::string const y_count_string =
+        y_count > 1 ? std::to_string(y_count) : "";
     std::string y_string;
 
     y_string += "set y" + y_count_string + "label \"" + s.getLabel() + "\"\n";
@@ -56,20 +58,43 @@ gnuplot_config.append(xrange);
 
   gnuplot_config.append(filenames);
 
-  gnuplot_config.append("plot for [file in filenames] file using 1:2 with lines\n");
+  gnuplot_config.append(
+      "plot for [file in filenames] file using 1:2 with lines\n");
 
-  gnuplot_config.append( R"(
+  gnuplot_config.append(R"(
 while (1) {
 	pause 1
 	replot
 }
 )");
 
-  std::cout << gnuplot_config << std::endl;
+  std::clog << gnuplot_config << std::endl;
 
   std::ofstream out("/tmp/gnuplot_config.txt");
   out << gnuplot_config;
   out.close();
+}
+
+void generate_gnuplot_data(std::vector<Sensor> const& sensors) {
+  for (auto const& s : sensors) {
+    auto a = s.getPrintWindow();
+
+    std::vector<double> const& v = a.ref.get();
+
+    std::string filename = std::string("/tmp/") + s.getName() + ".dat";
+    // std::ofstream out(filename);
+
+    double time{};
+    double increment_time{1.0 / s.getSamplingRate()};
+
+    for (std::size_t i{a.end - 1}; i >= a.begin; --i) {
+      std::clog << v[i] << "\t" << time << std::endl;
+      time += increment_time;
+    }
+
+    // out <<
+    // out.close();
+  }
 }
 
 int main(int argc, char** argv) {
@@ -83,7 +108,7 @@ int main(int argc, char** argv) {
   std::ifstream config_file(argv[1]);
 
   if (!config_file.good()) {
-    std::cout << "File: " << argv[1] << " cannot be accessed." << std::endl;
+    std::clog << "File: " << argv[1] << " cannot be accessed." << std::endl;
     exit(EXIT_FAILURE);
   }
 
@@ -98,7 +123,7 @@ int main(int argc, char** argv) {
 
   std::uint64_t const sampling_window{config_json["sampling_window"]};
 
-  std::cout << config_json.dump(4) << std::endl;
+  std::clog << config_json.dump(4) << std::endl;
 
   auto current_time = std::chrono::steady_clock::now();
 
@@ -118,7 +143,6 @@ int main(int argc, char** argv) {
 
   create_gnuplot_persistent_process(sampling_window, sensors);
 
-
   // for (std::size_t i{}; i < 10; ++i) {
   // Main loop for reading sensors
   while (true) {
@@ -126,13 +150,16 @@ int main(int argc, char** argv) {
 
     timers.front().wakeup_time += timers.front().increment_time;
 
-    std::cout << "Read: " << sensors[timers.front().sensor_index].read_sample()
-              << std::endl;
+    auto d = sensors[timers.front().sensor_index].read_sample();
+
+    std::clog << "Read: " << d << std::endl;
 
     std::make_heap(std::begin(timers), std::end(timers),
                    [](SensorPeriodicTimer& lhs, SensorPeriodicTimer& rhs) {
                      return lhs.wakeup_time > rhs.wakeup_time;
                    });
+
+    // generate_gnuplot_data(sensors);
   }
 
   return 1;
