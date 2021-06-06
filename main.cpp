@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <unistd.h>
 
 #include <algorithm>
@@ -23,7 +24,7 @@ struct SensorPeriodicTimer {
   std::size_t sensor_index;
 };
 
-void create_gnuplot_persistent_process(std::uint64_t sampling_window,
+void create_gnuplot_persistent_process_config(std::uint64_t sampling_window,
                                        std::vector<Sensor> const& sensors) {
   std::string gnuplot_config;
 
@@ -47,10 +48,20 @@ set format x "+%.3f"
     std::string y_string;
 
     y_string += "set y" + y_count_string + "label \"" + s.getLabel() + "\"\n";
-
-    filenames += s.getName() + ".dat ";
-
     gnuplot_config.append(y_string);
+
+    y_string.clear();
+    y_string += "set y" + y_count_string + "range [" + std::to_string(s.getMin()) + ":" + std::to_string(s.getMax()) +"]\n";
+    gnuplot_config.append(y_string);
+
+    auto filename = std::string("/tmp/") + s.getName() + ".dat ";
+    filenames += filename;
+
+    // create empty data file -- gnuplot wants one
+    std::ofstream out(filename);
+    out << 0 << "\t" << 0 << std::endl;
+    out.close();
+
     ++y_count;
   }
 
@@ -63,7 +74,7 @@ set format x "+%.3f"
 
   gnuplot_config.append(R"(
 while (1) {
-	pause 1
+	pause 2
 	replot
 }
 )");
@@ -75,6 +86,31 @@ while (1) {
   out.close();
 }
 
+int start_gnuplot_persistent_process() {
+  std::vector<char*> args;
+  args.push_back(const_cast<char*>("/usr/bin/gnuplot"));
+  args.push_back(const_cast<char*>("-persist"));
+  args.push_back(const_cast<char*>("/tmp/gnuplot_config.txt"));
+  args.push_back(nullptr);
+
+  pid_t pid = fork();
+
+  if (pid == -1) {
+    std::clog << "Error in fork()!" << std::endl;
+    ::exit(EXIT_FAILURE);
+  } else if (pid == 0) {
+    auto rv = ::execv("/usr/bin/gnuplot", args.data());
+
+    if (rv == -1) {
+      std::clog << "Error in execv()!" << std::endl;
+      ::exit(EXIT_FAILURE);
+    }
+    exit(EXIT_FAILURE);  // exec never returns
+  }
+
+  return pid;
+}
+
 void generate_gnuplot_data(std::vector<Sensor> const& sensors) {
   for (auto const& s : sensors) {
     auto a = s.getPrintWindow();
@@ -82,18 +118,29 @@ void generate_gnuplot_data(std::vector<Sensor> const& sensors) {
     std::vector<double> const& v = a.ref.get();
 
     std::string filename = std::string("/tmp/") + s.getName() + ".dat";
-    // std::ofstream out(filename);
+    std::string filename_tmp = std::string("/tmp/") + s.getName() + ".tmp";
+
+    std::ofstream out(filename_tmp);
 
     double time{};
     double increment_time{1.0 / s.getSamplingRate()};
 
-    for (std::size_t i{a.end - 1}; i >= a.begin; --i) {
-      std::clog << v[i] << "\t" << time << std::endl;
+    // std::clog << "begin_idx: " << a.begin << " end_idx: " << a.end <<
+    // std::endl;
+
+    // for (std::size_t i{a.end - 1}; i >= a.begin; --i) {
+    //   std::clog << v[i] << "\t" << time << std::endl;
+    //   time += increment_time;
+    // }
+
+    for (std::size_t i{a.end - 1}; i > a.begin; --i) {
+      out << time << "\t" << v[i] << std::endl;
       time += increment_time;
     }
 
-    // out <<
-    // out.close();
+    out.close();
+
+    rename(filename_tmp.c_str(), filename.c_str());
   }
 }
 
@@ -141,9 +188,10 @@ int main(int argc, char** argv) {
     }
   }
 
-  create_gnuplot_persistent_process(sampling_window, sensors);
+  create_gnuplot_persistent_process_config(sampling_window, sensors);
 
-  // for (std::size_t i{}; i < 10; ++i) {
+  auto gnu_plot_pid = start_gnuplot_persistent_process();
+
   // Main loop for reading sensors
   while (true) {
     std::this_thread::sleep_until(timers.front().wakeup_time);
@@ -159,7 +207,7 @@ int main(int argc, char** argv) {
                      return lhs.wakeup_time > rhs.wakeup_time;
                    });
 
-    // generate_gnuplot_data(sensors);
+    generate_gnuplot_data(sensors);
   }
 
   return 1;

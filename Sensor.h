@@ -31,6 +31,8 @@ class Sensor {
 
   [[nodiscard]] std::string const& getLabel() const { return label_; };
   [[nodiscard]] std::string const& getName() const { return name_; };
+  [[nodiscard]] double getMin() const { return min_value_; };
+  [[nodiscard]] double getMax() const { return max_value_; };
   [[nodiscard]] std::uint64_t getSamplingRate() const {
     return sampling_rate_;
   };
@@ -38,7 +40,7 @@ class Sensor {
     return sampling_window_;
   };
   [[nodiscard]] ReadOnlyPrintWindow getPrintWindow() const {
-    return {index_next_element_ + samples_in_window_ - valid_elements_ - 1,
+    return {index_next_element_ + samples_in_window_ - valid_elements_,
             index_next_element_ + samples_in_window_, samples_};
   };
 
