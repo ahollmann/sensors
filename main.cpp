@@ -54,13 +54,14 @@ set format x "+%.3f"
     y_string += "set y" + y_count_string + "range [" + std::to_string(s.getMin()) + ":" + std::to_string(s.getMax()) +"]\n";
     gnuplot_config.append(y_string);
 
-    auto filename = std::string("/tmp/") + s.getName() + ".dat ";
-    filenames += filename;
+    auto filename = std::string("/tmp/") + s.getName() + ".dat";
 
     // create empty data file -- gnuplot wants one
     std::ofstream out(filename);
     out << 0 << "\t" << 0 << std::endl;
     out.close();
+
+    filenames += filename + " ";
 
     ++y_count;
   }

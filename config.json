@@ -9,7 +9,7 @@
             "max_value": 374826,
             "label": "Uptime",
             "path": "/proc/uptime",
-            "enabled": true
+            "enabled": false
 		},
 		{
             "name": "number2",
