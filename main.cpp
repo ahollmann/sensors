@@ -192,7 +192,7 @@ int main(int argc, char** argv) {
 
   auto gnu_plot_pid = start_gnuplot_persistent_process();
 
-  // Main loop for reading sensors
+  // Main loop for reading sensors --- Only read_sample() should be called here to meet the timing requirements
   while (true) {
     std::this_thread::sleep_until(timers.front().wakeup_time);
 
@@ -206,8 +206,15 @@ int main(int argc, char** argv) {
                    [](SensorPeriodicTimer& lhs, SensorPeriodicTimer& rhs) {
                      return lhs.wakeup_time > rhs.wakeup_time;
                    });
+    // Time is running out ...
 
+    // This belongs into a seperate thread and called periodically, access to sensors next_element needs
+    // to be protected. Access to the samples is safe without a mutex if plotting takes less time then
+    // then the time in sampling_widow. We will never access the same elements.
     generate_gnuplot_data(sensors);
+
+    // The same guarantees of our storage pattern can be use for storing the data on disc.
+    //A separate thread should be used, since IO can be blocking
   }
 
   return 1;
