@@ -3,10 +3,12 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <string>
 #include <thread>
 
 #include "Sensor.h"
 #include "json.hpp"
+#include <unistd.h>
 
 void usage(char** argv) {
   std::cout << "Application: " << argv[0]
@@ -18,6 +20,57 @@ struct SensorPeriodicTimer {
   std::chrono::nanoseconds increment_time;
   std::size_t sensor_index;
 };
+
+void create_gnuplot_persistent_process(std::uint64_t sampling_window, std::vector<Sensor> const& sensors)
+{
+  std::string gnuplot_config;
+
+  gnuplot_config.append( R"(
+set title "Plotting Sensor Data over Time"
+set xdata
+set xlabel "Time from now in seconds"
+set format x "+%.3f"
+)");
+std::string xrange;
+xrange += "set xrange [" + std::to_string(sampling_window) + ",0]\n";
+gnuplot_config.append(xrange);
+
+  std::size_t y_count{1};
+
+  std::string filenames("filenames = \"");
+
+  for(auto const &s : sensors)
+  {
+    std::string const y_count_string = y_count > 1 ? std::to_string(y_count) : "";
+    std::string y_string;
+
+    y_string += "set y" + y_count_string + "label \"" + s.getLabel() + "\"\n";
+
+    filenames += s.getName() + ".dat ";
+
+    gnuplot_config.append(y_string);
+    ++y_count;
+  }
+
+  filenames += "\"\n";
+
+  gnuplot_config.append(filenames);
+
+  gnuplot_config.append("plot for [file in filenames] file using 1:2 with lines\n");
+
+  gnuplot_config.append( R"(
+while (1) {
+	pause 1
+	replot
+}
+)");
+
+  std::cout << gnuplot_config << std::endl;
+
+  std::ofstream out("/tmp/gnuplot_config.txt");
+  out << gnuplot_config;
+  out.close();
+}
 
 int main(int argc, char** argv) {
   using namespace std::chrono_literals;
@@ -62,6 +115,9 @@ int main(int argc, char** argv) {
                                            sensors.size() - 1});
     }
   }
+
+  create_gnuplot_persistent_process(sampling_window, sensors);
+
 
   // for (std::size_t i{}; i < 10; ++i) {
   // Main loop for reading sensors

@@ -24,5 +24,7 @@ double Sensor::read_sample() {
   // adjust our index - stay inside our sample window size
   index_next_element_ = (index_next_element_ + 1) % samples_in_window_;
 
+  valid_elements_ = std::min(++valid_elements_, samples_in_window_);
+
   return sample;
 }

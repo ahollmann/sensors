@@ -3,23 +3,23 @@
       "x_label": "Time",
 	"sensors": [
 		{
-            "name": "cpu_freq",
+            "name": "number",
             "sampling_rate": 1,
             "bit_depth": "16",
             "min_value": 0,
             "max_value": 3000,
-            "label": "Frequency in MHz",
-            "path": "/home/viraeh/number",
+            "label": "Uptime",
+            "path": "/proc/uptime",
             "enabled": true
 		},
 		{
-                  "name": "cpu_freq",
+                  "name": "number2",
                   "sampling_rate": 2,
                   "bit_depth": "16",
                   "min_value": 0,
                   "max_value": 3000,
-                  "label": "Frequency in MHz",
-                  "path": "/home/viraeh/number2",
+                  "label": "Average Load",
+                  "path": "/proc/loadavg",
                   "enabled": true
                   }
 	]

@@ -23,6 +23,9 @@ class Sensor {
 
   double read_sample();
 
+  [[nodiscard]] std::string const& getLabel() const {return label_;};
+  [[nodiscard]] std::string const& getName() const {return name_;};
+
  private:
   std::uint64_t const sampling_rate_;      // frequency in HZ
   std::uint64_t const sampling_window_;    // time in seconds
@@ -32,6 +35,8 @@ class Sensor {
   std::size_t const sampling_buffer_size_;
   // index to the next element
   std::size_t index_next_element_;
+
+  std::size_t valid_elements_{};
 
   std::string name_;
   std::string label_;
@@ -43,7 +48,7 @@ class Sensor {
 
   // Type double is used. We waste some space, but double is most versatile
   // and can store singed integers with a width of 52 bit exactly
-  // We might need it later.
+  // We might need type double later.
   std::vector<double> samples_;
 
   // Can be extended with timestamps if necessary
